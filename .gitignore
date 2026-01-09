@@ -1,0 +1,11 @@
+# script data
+*.mat
+*.asv
+
+# simulate
+slprj/_jitprj
+slprj/_sfprj
+slprj/grt
+*.original
+
+*.code-workspace
