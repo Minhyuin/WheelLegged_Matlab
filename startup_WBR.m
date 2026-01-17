@@ -7,7 +7,7 @@ function startup_WBR(robot_stats)
     %% 配置项 %%
     CALC_MPC = false; % 是否需要计算MPC
     
-    FIT_K = false; % 是否需要拟合K
+    FIT_K = true; % 是否需要拟合K
     
     %% 初始化变量 %%
     N_x = 10; % 本模型状态变量
@@ -37,7 +37,7 @@ function startup_WBR(robot_stats)
         fprintf("\n=== 正在拟合K矩阵" + mfilename + ".m ===\n");
         L_MIN = 0.1;  % 最小腿长
         L_MAX = 0.3;  % 最大腿长
-        N_SAMPLES = 10;  % 每个维度的采样点数
+        N_SAMPLES = 5;  % 每个维度的采样点数
         L_left_list = linspace(L_MIN, L_MAX, N_SAMPLES);
         L_right_list =  linspace(L_MIN, L_MAX, N_SAMPLES);
         TOTAL_N_SAMPLES = numel(L_left_list) * numel(L_right_list);
@@ -77,14 +77,15 @@ function startup_WBR(robot_stats)
         [K_sym, K_sim_param] = polyfitn_K(X_data, K_data, rank, false);
         
         % 输出代码
-        % get_matrix_param_in_C_code(K_sym, 'K');
+        polyfitn_to_cpp_optimal(K_sym, 'LQR_K_DATA');
     else
         %% 不拟合 %%
         length_left_constant = 0.2;
         length_right_constant = 0.2;
         fprintf("\n=== 正在计算定腿长K矩阵" + mfilename + ".m ===\n");
         fprintf("左腿长为" + length_left_constant + "，右腿长为" + length_right_constant + "\n");
+        % 计算K
         K = calc_LQR_K40(Q, R, length_left_constant, length_right_constant, 1000, robot_stats, status_matrix);
-        disp(K);
+        matrix_to_cpp(K, 'LQR_K_DATA');
     end
 end
