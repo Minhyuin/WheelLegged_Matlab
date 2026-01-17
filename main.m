@@ -1,4 +1,4 @@
-% 基于LQR/MPC计算WBR模型的轮腿控制增益K矩阵，并转换为cpp/c风格代码
+% 主程序，按配置调用不同模型以生成能够在嵌入式端使用的增益参数
 % Author: MYUIN
 
 %% START %%
@@ -6,6 +6,11 @@ tic
 clear
 clc
 fprintf("\n=== 正在运行" + mfilename + ".m ===\n");
+
+currentDir = fileparts(mfilename('fullpath'));  % 获取当前脚本所在目录
+commonPath = fullfile(currentDir, 'common');   % 构建 common 文件夹路径
+addpath(commonPath);
+
 disp("清空命令行窗口");
 disp("开始计时");
 
@@ -29,4 +34,4 @@ if MODEL == 0
 end
 
 %% END %%
-fprintf("\n=== 解算耗时:" + toc + "===\n");
+fprintf("\n=== 总耗时:" + toc + "===\n");

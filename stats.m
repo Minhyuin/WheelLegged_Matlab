@@ -15,37 +15,37 @@ function stats()
     % 【腿】包含了从髋关节开始以下的所有部分，包含大腿、膝关节、小腿、驱动轮（踝关节）
     % 【机体】即机器人整机除去腿外的部分，包含底盘、云台、发射机构
     
-    mass_total = 15; % 整机称重可得
+    mass_total = 14.52; % 整机称重可得
     
-    inertia_z = 1; % 机器人绕z轴（中心）转动惯量 （实际在现实中并非常量，这里简化为常量
+    inertia_z = 0.2296; % 机器人绕z轴（中心）转动惯量 （实际在现实中并非常量，这里简化为常量
     
-    distance_body_hip = 1; % 机体质心到髋关节的距离
+    distance_body_hip = -0.0352; % 机体质心到髋关节的距离
     
-    distance_wheel = 1; % 左右驱动轮轮距
+    distance_wheel = 0.32+0.05; % 左右驱动轮轮距
     distance_half_wheel = distance_wheel / 2; % 左右驱动轮轮距 / 2
     
     %% 腿 %%
     %%% 非变化常量 %%%
-    mass_thigh_aver = 1; % 单根大腿质量（几何上等效）
-    mass_calf_aver = 1; % 单根小腿质量 (几何上等效)
-    mass_leg_other_aver = 1; % 除主结构大腿和小腿外的质量（如轴承、额外连杆等）
+    mass_thigh_aver = 0.215; % 单根大腿质量（几何上等效）
+    mass_calf_aver = 0.325; % 单根小腿质量 (几何上等效)
+    mass_leg_other_aver = 0; % 除主结构大腿和小腿外的质量（如轴承、额外连杆等）
     mass_leg_aver = mass_thigh_aver + mass_calf_aver + mass_leg_other_aver; % 假设两腿等价，单腿的质量
     mass_leg_left = mass_leg_aver; % 左腿整腿质量
     mass_leg_right = mass_leg_aver; % 右腿整腿质量
     
-    mass_wheel_motor_aver = 1; % 轮毂电机质量
-    mass_wheel_other_aver = 1; % 轮毂其他加工件质量
+    mass_wheel_motor_aver = 0.880; % 轮毂电机质量
+    mass_wheel_other_aver = 0.500; % 轮毂其他加工件质量
     mass_wheel_aver = mass_wheel_motor_aver + mass_wheel_other_aver; % 假设两轮等价，单轮的质量 
     mass_wheel_left = mass_wheel_aver; % 左轮毂质量
     mass_wheel_right = mass_wheel_aver; % 右轮毂质量
     
     mass_leg_total = mass_leg_left + mass_leg_right + mass_wheel_left + mass_wheel_right;
     
-    diameter_wheel = 1; % 驱动轮直径
+    diameter_wheel = 0.200; % 驱动轮直径
     radius_wheel = diameter_wheel / 2; % 驱动轮半径
     
-    % Inertial_wheel_aver =  0.5 * mass_wheel_aver * radius_wheel^2;
-    inertia_wheel_aver = 1; % 驱动轮绕轮新转动惯量
+    % inertia_wheel_aver =  0.5 * mass_wheel_aver * radius_wheel^2;
+    inertia_wheel_aver = 0.0069; % 驱动轮绕轮新转动惯量
     
     %%% 随腿运动学变化而变化的量 %%%
     
@@ -88,12 +88,12 @@ function stats()
     
     %% 机体 %%
     mass_body = mass_total - mass_leg_total; % 机体质量
-    inertia_body = 1; % 机体绕髋关节转动惯量
+    inertia_body = 0.3870; % 机体绕髋关节转动惯量
     
     % 底盘三维
-    chassis_length = 0.3;
-    chassis_width = 0.3;
-    chassis_height = 0.3;
+    chassis_length = 0.304;
+    chassis_width = 0.312;
+    chassis_height = 0.176;
     
     % 云台三维
     gimbal_length = 0.3;
