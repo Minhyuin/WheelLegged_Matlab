@@ -10,6 +10,8 @@ fprintf("\n=== 正在运行" + mfilename + ".m ===\n");
 currentDir = fileparts(mfilename('fullpath'));  % 获取当前脚本所在目录
 commonPath = fullfile(currentDir, 'common');   % 构建 common 文件夹路径
 addpath(commonPath);
+simPath = fullfile(currentDir, 'sim');   % 构建 common 文件夹路径
+addpath(simPath);
 
 disp("清空命令行窗口");
 disp("开始计时");
@@ -29,9 +31,21 @@ else
 end
 robot_stats = load(robot_stats_file);
 
+%% 启动模型 %%
 if MODEL == 0
-    startup_WBR(robot_stats);
+    startup_WBR_class(robot_stats);
 end
+
+%% 加载仿真参数 %%
+[SIMPARAM] = load_sim(MODEL, true);
 
 %% END %%
 fprintf("\n=== 总耗时:" + toc + "===\n");
+
+%% WBR启动函数
+function startup_WBR_class(robot_stats)
+    controller = WBR(robot_stats);
+    controller.computeAndFitK();
+    controller.saveSimParam('WBR_sim_param.mat');
+    fprintf('\n=== WBR控制器设计完成 ===\n');
+end

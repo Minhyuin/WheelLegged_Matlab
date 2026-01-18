@@ -3,9 +3,8 @@
 *.asv
 
 # simulate
-slprj/_jitprj
-slprj/_sfprj
-slprj/grt
+slprj/
+*.slxc
 *.original
 
 *.code-workspace

@@ -26,6 +26,9 @@ function stats()
     
     %% 腿 %%
     %%% 非变化常量 %%%
+    length_thigh = 0.210; % 大腿长;
+    length_calf = 0.250; % 小腿长;
+
     mass_thigh_aver = 0.215; % 单根大腿质量（几何上等效）
     mass_calf_aver = 0.325; % 单根小腿质量 (几何上等效)
     mass_leg_other_aver = 0; % 除主结构大腿和小腿外的质量（如轴承、额外连杆等）
@@ -100,6 +103,15 @@ function stats()
     gimbal_width = 0.3;
     gimbal_height = 0.3;
     
+    %% 物理极限 %%
+    max_torque_wheel=3.94; % 轮毂最大连续输出力矩
+    max_rpm_wheel=280; % 轮毂最大瞬时转速
+
+    max_torque_joint=40; % 腿关节最大连续输出力矩
+    max_rpm_joint=300; % 腿关节最大瞬时转速
+
+    leg_length_max = 0.3;
+    leg_length_min = 0.1;
     
     %% 存参 %%
     save robot_stats.mat 
