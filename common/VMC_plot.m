@@ -46,7 +46,7 @@ function [L0, phi0, phi2, phi3] = VMC_plot(phi1, phi4, L1, L2, L3, L4, L5, show_
     grid on;
     box on;
     axis equal;
-    title('五连杆并联机构示意图', 'FontSize', 14, 'FontWeight', 'bold');
+    title('并联机构示意图', 'FontSize', 14, 'FontWeight', 'bold');
     xlabel('X (mm 或 m)', 'FontSize', 12);
     ylabel('Y (mm 或 m)', 'FontSize', 12);
     

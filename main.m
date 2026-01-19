@@ -37,7 +37,7 @@ if MODEL == 0
 end
 
 %% 加载仿真参数 %%
-[SIMPARAM] = load_sim(MODEL, true);
+[SIMPARAM] = load_sim(MODEL, false);
 
 %% END %%
 fprintf("\n=== 总耗时:" + toc + "===\n");
