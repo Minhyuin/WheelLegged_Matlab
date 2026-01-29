@@ -5,22 +5,31 @@ function evaluate_fit_results(X_data, K_data, K_sym, rank, show_plots)
 %   X_data - 自变量数据，格式为 [total_samples × n_vars]
 %   K_data - 原始K矩阵数据，格式为 [total_samples × N_u × N_x]
 %   K_sym - 拟合出的符号表达式矩阵，[N_u × N_x]符号矩阵
-%   K_sim_param - 多项式系数矩阵，[N_u × N_x × (rank+1) × (rank+1)]
 %   rank - 拟合阶数
 %   show_plots - 是否显示绘图，默认为true
 
-    if nargin < 6
+    if nargin < 5
         show_plots = true;
     end
     
     fprintf("\n=== 正在评估拟合结果 ===\n");
     
-    %% 基本参数
+    %% 基本参数和输入检查
     dims = size(K_data);
     total_samples = dims(1);
     N_u = dims(2);
     N_x = dims(3);
     poly_n = N_u * N_x;
+    n_vars = size(X_data, 2);
+    
+    % 检查输入数据维度
+    if total_samples ~= size(X_data, 1)
+        error('X_data 和 K_data 的样本数量不一致');
+    end
+    
+    fprintf('数据维度: %d 个样本, %d 个自变量\n', total_samples, n_vars);
+    fprintf('K矩阵维度: %d × %d\n', N_u, N_x);
+    fprintf('拟合阶数: %d\n', rank);
     
     %% 计算预测值和误差
     MSE = zeros(N_u, N_x);  % 均方误差
@@ -36,12 +45,14 @@ function evaluate_fit_results(X_data, K_data, K_sym, rank, show_plots)
             K_actual = squeeze(K_data(:, i, j));
             
             % 从符号表达式中提取变量名
-            % polyfitn默认使用x1, x2,...作为变量名
             vars = symvar(K_sym(i, j));
             
-            % 确保变量数量与自变量维度一致
-            if length(vars) ~= size(X_data, 2)
-                error('符号表达式中的变量数量与自变量维度不一致\n');
+            % 检查变量数量
+            if length(vars) ~= n_vars
+                warning('K(%d,%d): 符号表达式有 %d 个变量, 但 X_data 有 %d 列。尝试继续计算...', ...
+                    i, j, length(vars), n_vars);
+                % 尝试使用通用的变量名
+                vars = sym(sprintf('x%d', 1:n_vars));
             end
             
             % 计算预测值（使用符号表达式）
@@ -49,7 +60,7 @@ function evaluate_fit_results(X_data, K_data, K_sym, rank, show_plots)
             for k = 1:total_samples
                 % 动态替换变量
                 subs_expr = K_sym(i, j);
-                for v_idx = 1:length(vars)
+                for v_idx = 1:min(length(vars), n_vars)
                     subs_expr = subs(subs_expr, vars(v_idx), X_data(k, v_idx));
                 end
                 K_pred(k) = double(subs_expr);
@@ -80,36 +91,49 @@ function evaluate_fit_results(X_data, K_data, K_sym, rank, show_plots)
     
     %% 输出整体统计
     fprintf('拟合误差统计：\n');
-    fprintf('==============');
-    fprintf('\n');
+    fprintf('==============\n');
     
     fprintf('整体均方误差 (MSE):\n');
     fprintf('  平均值: %.4e\n', mean(MSE(:)));
-    fprintf('  最小值: %.4e (位置: [%d,%d])\n', min(MSE(:)), find(MSE == min(MSE(:)), 1));
-    fprintf('  最大值: %.4e (位置: [%d,%d])\n', max(MSE(:)), find(MSE == max(MSE(:)), 1));
+    [min_val, min_idx] = min(MSE(:));
+    [i_min, j_min] = ind2sub(size(MSE), min_idx);
+    fprintf('  最小值: %.4e (位置: [%d,%d])\n', min_val, i_min, j_min);
+    [max_val, max_idx] = max(MSE(:));
+    [i_max, j_max] = ind2sub(size(MSE), max_idx);
+    fprintf('  最大值: %.4e (位置: [%d,%d])\n', max_val, i_max, j_max);
     fprintf('  中位数: %.4e\n', median(MSE(:)));
     
     fprintf('\n整体平均绝对误差 (MAE):\n');
     fprintf('  平均值: %.4e\n', mean(MAE(:)));
-    fprintf('  最小值: %.4e (位置: [%d,%d])\n', min(MAE(:)), find(MAE == min(MAE(:)), 1));
-    fprintf('  最大值: %.4e (位置: [%d,%d])\n', max(MAE(:)), find(MAE == max(MAE(:)), 1));
+    [min_val, min_idx] = min(MAE(:));
+    [i_min, j_min] = ind2sub(size(MAE), min_idx);
+    fprintf('  最小值: %.4e (位置: [%d,%d])\n', min_val, i_min, j_min);
+    [max_val, max_idx] = max(MAE(:));
+    [i_max, j_max] = ind2sub(size(MAE), max_idx);
+    fprintf('  最大值: %.4e (位置: [%d,%d])\n', max_val, i_max, j_max);
     
     fprintf('\n整体最大绝对误差:\n');
     fprintf('  平均值: %.4e\n', mean(MAX_AE(:)));
     fprintf('  最小值: %.4e\n', min(MAX_AE(:)));
-    fprintf('  最大值: %.4e (位置: [%d,%d])\n', max(MAX_AE(:)), find(MAX_AE == max(MAX_AE(:)), 1));
+    [max_val, max_idx] = max(MAX_AE(:));
+    [i_max, j_max] = ind2sub(size(MAX_AE), max_idx);
+    fprintf('  最大值: %.4e (位置: [%d,%d])\n', max_val, i_max, j_max);
     
     fprintf('\n决定系数 R²:\n');
     fprintf('  平均值: %.4f\n', mean(R_squared(:)));
-    fprintf('  最小值: %.4f (位置: [%d,%d])\n', min(R_squared(:)), find(R_squared == min(R_squared(:)), 1));
-    fprintf('  最大值: %.4f (位置: [%d,%d])\n', max(R_squared(:)), find(R_squared == max(R_squared(:)), 1));
+    [min_val, min_idx] = min(R_squared(:));
+    [i_min, j_min] = ind2sub(size(R_squared), min_idx);
+    fprintf('  最小值: %.4f (位置: [%d,%d])\n', min_val, i_min, j_min);
+    [max_val, max_idx] = max(R_squared(:));
+    [i_max, j_max] = ind2sub(size(R_squared), max_idx);
+    fprintf('  最大值: %.4f (位置: [%d,%d])\n', max_val, i_max, j_max);
+    
     fprintf('  R² < 0.9 的元素数: %d/%d (%.1f%%)\n', ...
         sum(R_squared(:) < 0.9), poly_n, sum(R_squared(:) < 0.9)/poly_n*100);
     fprintf('  R² < 0.95 的元素数: %d/%d (%.1f%%)\n', ...
         sum(R_squared(:) < 0.95), poly_n, sum(R_squared(:) < 0.95)/poly_n*100);
     
-    fprintf('==============');
-    fprintf('\n\n');
+    fprintf('==============\n\n');
     
     %% 绘制误差分布图
     if show_plots
@@ -164,12 +188,15 @@ function evaluate_fit_results(X_data, K_data, K_sym, rank, show_plots)
         
         % 获取变量名
         vars = symvar(K_sym(i_best, j_best));
+        if length(vars) ~= n_vars
+            vars = sym(sprintf('x%d', 1:n_vars));
+        end
         
         % 计算预测值
         K_pred_best = zeros(total_samples, 1);
         for k = 1:total_samples
             subs_expr = K_sym(i_best, j_best);
-            for v_idx = 1:length(vars)
+            for v_idx = 1:min(length(vars), n_vars)
                 subs_expr = subs(subs_expr, vars(v_idx), X_data(k, v_idx));
             end
             K_pred_best(k) = double(subs_expr);
@@ -190,46 +217,76 @@ function evaluate_fit_results(X_data, K_data, K_sym, rank, show_plots)
         grid on;
         axis equal;
         
-        % 子图6: 拟合曲面示例
+        % 子图6: 根据自变量数量选择不同的可视化方式
         subplot(2, 3, 6);
-        % 创建网格用于绘制拟合曲面
-        L_left_range = linspace(min(X_data(:,1)), max(X_data(:,1)), 30);
-        L_right_range = linspace(min(X_data(:,2)), max(X_data(:,2)), 30);
-        [L_left_grid, L_right_grid] = meshgrid(L_left_range, L_right_range);
         
-        % 计算拟合曲面
-        K_surf = zeros(size(L_left_grid));
-        for m = 1:size(L_left_grid, 1)
-            for n = 1:size(L_left_grid, 2)
+        if n_vars == 1
+            % 单变量情况：绘制拟合曲线
+            x_range = linspace(min(X_data(:,1)), max(X_data(:,1)), 100);
+            K_curve = zeros(size(x_range));
+            
+            for k = 1:length(x_range)
                 subs_expr = K_sym(i_best, j_best);
-                % 假设第一个变量是左腿长，第二个是右腿长
-                subs_expr = subs(subs_expr, vars(1), L_left_grid(m, n));
-                subs_expr = subs(subs_expr, vars(2), L_right_grid(m, n));
-                K_surf(m, n) = double(subs_expr);
+                subs_expr = subs(subs_expr, vars(1), x_range(k));
+                K_curve(k) = double(subs_expr);
             end
+            
+            plot(x_range, K_curve, 'b-', 'LineWidth', 2);
+            hold on;
+            scatter(X_data(:,1), K_actual_best, 50, 'r', 'filled');
+            hold off;
+            
+            xlabel('自变量 x1');
+            ylabel(sprintf('K(%d,%d)', i_best, j_best));
+            title('单变量拟合曲线');
+            grid on;
+            legend('拟合曲线', '原始数据', 'Location', 'best');
+            
+        elseif n_vars == 2
+            % 双变量情况：绘制拟合曲面
+            x1_range = linspace(min(X_data(:,1)), max(X_data(:,1)), 30);
+            x2_range = linspace(min(X_data(:,2)), max(X_data(:,2)), 30);
+            [X1_grid, X2_grid] = meshgrid(x1_range, x2_range);
+            
+            % 计算拟合曲面
+            K_surf = zeros(size(X1_grid));
+            for m = 1:size(X1_grid, 1)
+                for n = 1:size(X1_grid, 2)
+                    subs_expr = K_sym(i_best, j_best);
+                    subs_expr = subs(subs_expr, vars(1), X1_grid(m, n));
+                    subs_expr = subs(subs_expr, vars(2), X2_grid(m, n));
+                    K_surf(m, n) = double(subs_expr);
+                end
+            end
+            
+            surf(X1_grid, X2_grid, K_surf);
+            hold on;
+            % 绘制原始采样点
+            scatter3(X_data(:,1), X_data(:,2), K_actual_best, 50, 'r', 'filled');
+            hold off;
+            
+            xlabel('自变量 x1');
+            ylabel('自变量 x2');
+            zlabel(sprintf('K(%d,%d)', i_best, j_best));
+            title('双变量拟合曲面');
+            grid on;
+            
+        else
+            % 多变量情况：显示变量重要性或其他信息
+            text(0.3, 0.5, sprintf('自变量数量: %d\n无法直接可视化', n_vars), ...
+                'FontSize', 12, 'HorizontalAlignment', 'center');
+            title('多变量拟合结果');
+            axis off;
         end
         
-        surf(L_left_grid, L_right_grid, K_surf);
-        hold on;
-        % 绘制原始采样点
-        scatter3(X_data(:,1), X_data(:,2), K_actual_best, 50, 'r', 'filled');
-        hold off;
-        
-        xlabel('左腿长');
-        ylabel('右腿长');
-        zlabel(sprintf('K(%d,%d)', i_best, j_best));
-        title('拟合曲面 vs 原始采样点');
-        grid on;
-        
-        sgtitle(sprintf('多项式拟合评估 (阶数: %d, 元素总数: %d)', rank, poly_n));
+        sgtitle(sprintf('多项式拟合评估 (阶数: %d, 元素总数: %d, 自变量: %d)', rank, poly_n, n_vars));
         
         fprintf('误差分析图已生成。\n');
     end
     
     %% 生成简要报告
     fprintf('\n拟合质量简要报告：\n');
-    fprintf('==============');
-    fprintf('\n');
+    fprintf('==============\n');
     
     % 根据R²平均值评估拟合质量
     mean_r2 = mean(R_squared(:));
@@ -258,6 +315,19 @@ function evaluate_fit_results(X_data, K_data, K_sym, rank, show_plots)
         fprintf('  - 拟合质量良好，可以用于实际应用\n');
     end
     
-    fprintf('==============');
-    fprintf('\n\n');
+    fprintf('==============\n\n');
+    
+    %% 返回计算结果（可选）
+    results.MSE = MSE;
+    results.MAE = MAE;
+    results.MAX_AE = MAX_AE;
+    results.R_squared = R_squared;
+    results.mean_r2 = mean_r2;
+    results.quality = quality;
+    results.n_vars = n_vars;
+    
+    % 如果有输出参数，则返回结果结构体
+    if nargout > 0
+        varargout{1} = results;
+    end
 end

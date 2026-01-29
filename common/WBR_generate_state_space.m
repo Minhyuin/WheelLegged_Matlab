@@ -1,4 +1,4 @@
-function generate_A10_B4()
+function WBR_generate_state_space()
     % 10输入4输出状态空间方程AB矩阵求解
     % 脚本会解出A、B矩阵的表达式sym_A和sym_B
     % 写法参考港科的开源，核心还是解上交的方程

@@ -54,10 +54,13 @@ function [K_sym, K_sim_param] = polyfitn_K(X_data, K_data, rank, is_evaluate)
             nterms = length(coef);
             nvars = size(expon, 2);
             
-            for k = 1 : nterms
-                exp1 = expon(k, 1) + 1;
-                exp2 = expon(k, 2) + 1;
-                if exp1 <= rank+1 && exp2 <= rank+1
+            expon_full = zeros(nterms, 2); % 最多处理2个变量
+            expon_full(:, 1:min(2, nvars)) = expon(:, 1:min(2, nvars));
+            for k = 1:nterms
+                exp1 = expon_full(k, 1) + 1;
+                exp2 = expon_full(k, 2) + 1;
+                
+                if exp1 <= rank + 1 && exp2 <= rank + 1
                     K_sim_param(i, j, exp1, exp2) = coef(k);
                 else
                     error('多项式阶数超过了预分配的数组维度');
@@ -87,7 +90,7 @@ function [K_sym, K_sim_param] = polyfitn_K(X_data, K_data, rank, is_evaluate)
     fprintf('\n');
     fprintf('拟合完成！\n');
     fprintf('  - 拟合阶数: %d阶\n', rank);
-    fprintf('  - 自变量维度: %d (左腿长, 右腿长)\n', size(X_data, 2));
+    fprintf('  - 自变量维度: %d (腿长)\n', size(X_data, 2));
     fprintf('  - 采样点数量: %d\n', total_samples);
     fprintf('  - K矩阵维度: %d×%d\n', N_u, N_x);
     fprintf('  - 待拟合元素总数: %d\n', poly_n);

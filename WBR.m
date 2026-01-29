@@ -1,5 +1,5 @@
 classdef WBR < handle
-    %WBRCONTROLLERDESIGN WBR模型控制器设计类
+    %WBR WBR模型控制器设计类
     %   基于LQR/MPC计算WBR模型的轮腿控制增益K矩阵，并转换为C++风格代码
     
     properties
@@ -30,6 +30,9 @@ classdef WBR < handle
         % 权重矩阵
         Q                          % 状态权重矩阵
         R                          % 控制权重矩阵
+
+        % 控制频率
+        control_freq double = 1000
 
         % 拟合参数
         N_SAMPLES double = 5       % 每个维度的采样点数
@@ -79,7 +82,7 @@ classdef WBR < handle
                 obj.status_matrix = load(status_matrix_file);
             else
                 fprintf('%s 不存在，尝试生成...\n', status_matrix_file);
-                generate_A10_B4();
+                WBR_generate_state_space();
                 obj.status_matrix = load(status_matrix_file);
                 fprintf('%s 生成完毕\n', status_matrix_file);
             end
@@ -92,8 +95,8 @@ classdef WBR < handle
             fprintf("计算LQR增益 - 左腿长: %.3f, 右腿长: %.3f\n", ...
                 length_left, length_right);
             
-            K = obj.calc_LQR_K40(obj.Q, obj.R, ...
-                length_left, length_right, 1000, ...
+            K = obj.calc_LQR_K(obj.Q, obj.R, ...
+                length_left, length_right, obj.control_freq, ...
                 obj.robot_stats, obj.status_matrix);
             
             % 保存结果
@@ -143,8 +146,8 @@ classdef WBR < handle
                     sample_idx = sample_idx + 1;
                     
                     % 计算当前腿长下的K矩阵
-                    current_K = obj.calc_LQR_K40(obj.Q, obj.R, ...
-                        length_left, length_right, 1000, ...
+                    current_K = obj.calc_LQR_K(obj.Q, obj.R, ...
+                        length_left, length_right, obj.control_freq, ...
                         obj.robot_stats, obj.status_matrix);
                     
                     % 保存数据
@@ -233,10 +236,9 @@ classdef WBR < handle
     
     methods (Access = private)
         % 这些方法假设已经在路径中定义
-        function K = calc_LQR_K40(obj, Q, R, length_left, length_right, max_iter, robot_stats, status_matrix)
-            %CALC_LQR_K40 计算LQR增益（包装外部函数）
-            K = calc_LQR_K40(Q, R, length_left, length_right, ...
-                max_iter, robot_stats, status_matrix);
+        function K = calc_LQR_K(obj, Q, R, length_left, length_right, freq, robot_stats, status_matrix)
+            K = WBR_calc_LQR_K(Q, R, length_left, length_right, ...
+                freq, robot_stats, status_matrix);
         end
         
         function [K_sym, K_sim_param] = polyfitn_K(obj, X_data, K_data, rank, verbose)

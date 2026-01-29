@@ -95,7 +95,7 @@ figure('Position', [100, 100, 900, 600], 'Name', '腿长相关参数拟合效果
 
 % 子图1: dis_w_l 拟合
 subplot(2, 2, 1);
-plot(L, dis_w_l, 'bo', 'MarkerSize', 8, 'LineWidth', 1.5, 'DisplayName', '原始数据');
+plot(L, dis_w_l, 'yo', 'MarkerSize', 8, 'LineWidth', 1.5, 'DisplayName', '原始数据');
 hold on;
 plot(L_fine, fit_dis_w_l(L_fine), 'r-', 'LineWidth', 2, 'DisplayName', '拟合曲线');
 xlabel('腿长 L (m)', 'FontSize', 12);
@@ -107,7 +107,7 @@ hold off;
 
 % 子图2: dis_h_l 拟合
 subplot(2, 2, 2);
-plot(L, dis_h_l, 'bo', 'MarkerSize', 8, 'LineWidth', 1.5, 'DisplayName', '原始数据');
+plot(L, dis_h_l, 'yo', 'MarkerSize', 8, 'LineWidth', 1.5, 'DisplayName', '原始数据');
 hold on;
 plot(L_fine, fit_dis_h_l(L_fine), 'r-', 'LineWidth', 2, 'DisplayName', '拟合曲线');
 xlabel('腿长 L (m)', 'FontSize', 12);
@@ -119,7 +119,7 @@ hold off;
 
 % 子图3: I_l 拟合
 subplot(2, 2, 3);
-plot(L, I_l, 'bo', 'MarkerSize', 8, 'LineWidth', 1.5, 'DisplayName', '原始数据');
+plot(L, I_l, 'yo', 'MarkerSize', 8, 'LineWidth', 1.5, 'DisplayName', '原始数据');
 hold on;
 plot(L_fine, fit_I_l(L_fine), 'r-', 'LineWidth', 2, 'DisplayName', '拟合曲线');
 xlabel('腿长 L (m)', 'FontSize', 12);
