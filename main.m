@@ -17,7 +17,7 @@ disp("清空命令行窗口");
 disp("开始计时");
 
 %% 配置项 %%
-MODEL = 0; % 模型选择，0: WBR(全身建模) | 1: WL(单腿建模) | 2: ST(板凳建模)
+MODEL = 1; % 模型选择，0: WBR(全身建模) | 1: WL(单腿建模) | 2: ST(板凳建模) | 3：WBR2(优化平衡点的全身建模)
 
 %% 加载必要物理参数 %%
 robot_stats_file  = 'robot_stats.mat';
@@ -34,6 +34,14 @@ robot_stats = load(robot_stats_file);
 %% 启动模型 %%
 if MODEL == 0
     startup_WBR_class(robot_stats);
+elseif MODEL == 1
+    startup_WL_class(robot_stats);
+elseif MODEL == 2
+    status_ST_class(robot_stats);
+elseif MODEL == 3
+    status_WBR2_class(robot_stats);
+else
+    error('\n！未知模型！\n');
 end
 
 %% 加载仿真参数 %%
@@ -48,4 +56,22 @@ function startup_WBR_class(robot_stats)
     controller.computeAndFitK();
     controller.saveSimParam('WBR_sim_param.mat');
     fprintf('\n=== WBR控制器设计完成 ===\n');
+end
+
+%% WL启动函数
+function startup_WL_class(robot_stats)
+    controller = WL(robot_stats);
+    controller.computeAndFitK();
+    controller.saveSimParam('WL_sim_param.mat');
+    fprintf('\n=== WL控制器设计完成 ===\n');
+end
+
+%% ST启动函数
+function startup_ST_class(robot_stats)
+    fprintf('\n=== ST控制器设计完成 ===\n');
+end
+
+%% WBR2启动函数
+function startup_WBR2_class(robot_stats)
+    fprintf('\n=== WBR2控制器设计完成 ===\n');
 end
