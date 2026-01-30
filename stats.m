@@ -92,6 +92,7 @@ function stats()
     %% 机体 %%
     mass_body = mass_total - mass_leg_total; % 机体质量
     inertia_body = 0.3870; % 机体绕髋关节转动惯量
+    body_centroid_offset_ang = deg2rad(0); % 机体质心偏移角度（从机体方向指向质心，逆时针正方向）
     
     % 底盘三维
     chassis_length = 0.304;

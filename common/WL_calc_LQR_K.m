@@ -1,6 +1,5 @@
 function [K] = WL_calc_LQR_K(Q, R, length, control_freq, STATS_FILE, A6_B2_FILE)
-    %WL_CALC_LQR_K 计算指定腿长下的K矩阵（2 * 6），模型：WL
-    %   此处显示详细说明
+    % WL_CALC_LQR_K 计算指定腿长下的K矩阵（2 * 6），模型：WL
     dt = 1 / control_freq;
     
     [sym_vars, sym_vals] = compute_state(length, STATS_FILE, A6_B2_FILE);

@@ -17,7 +17,7 @@ disp("清空命令行窗口");
 disp("开始计时");
 
 %% 配置项 %%
-MODEL = 1; % 模型选择，0: WBR(全身建模) | 1: WL(单腿建模) | 2: ST(板凳建模) | 3：WBR2(优化平衡点的全身建模)
+MODEL = 0; % 模型选择，0: WBR(全身建模) | 1: WL(单腿建模) | 2: ST(板凳建模) | 3：WBR2(优化平衡点的全身建模)
 
 %% 加载必要物理参数 %%
 robot_stats_file  = 'robot_stats.mat';
@@ -73,5 +73,8 @@ end
 
 %% WBR2启动函数
 function startup_WBR2_class(robot_stats)
+    controller = WBR2(robot_stats);
+    controller.computeAndFitK();
+    controller.saveSimParam('WBR2_sim_param.mat');
     fprintf('\n=== WBR2控制器设计完成 ===\n');
 end

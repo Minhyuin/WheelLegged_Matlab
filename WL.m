@@ -5,7 +5,7 @@ classdef WL < handle
     properties
         % 控制器配置
         CALC_MPC logical = false   % 是否需要计算MPC
-        FIT_K logical = true       % 是否需要拟合K
+        FIT_K logical = false       % 是否需要拟合K
         EVALUATE_FITTING_STATS logical = false; % 是否需要评估拟合结果
         
         % 机器人参数
@@ -37,6 +37,9 @@ classdef WL < handle
         % 拟合参数
         N_SAMPLES double = 10       % 每个维度的采样点数
         poly_rank double = 3       % 多项式拟合阶数
+
+        % 默认腿长
+        default_length = 0.2;
     end
 
     methods
@@ -104,7 +107,7 @@ classdef WL < handle
             
             if ~obj.FIT_K
                 fprintf("\n=== 直接计算固定腿长K矩阵 ===\n");
-                length = 0.2;
+                length = obj.default_length;
                 fprintf("腿长: %.3f\n", length);
                 
                 obj.K = obj.computeLQRForSingleLength(length);

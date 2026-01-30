@@ -1,6 +1,5 @@
 function [K] = WBR_calc_LQR_K(Q, R, length_left, length_right, control_freq, STATS_FILE, A10_B4_FILE)
-    %CALC_LQR_K40 计算指定腿长下的K矩阵（4 * 10），模型：WBR
-    %   此处显示详细说明
+    % WBR_calc_LQR_K 计算指定腿长下的K矩阵（4 * 10），模型：WBR
     dt = 1 / control_freq;
     
     [sym_vars, sym_vals] = compute_state(length_left, length_right, STATS_FILE, A10_B4_FILE);
@@ -12,17 +11,6 @@ function [K] = WBR_calc_LQR_K(Q, R, length_left, length_right, control_freq, STA
     B_Continuous = subs(B, sym_vars, sym_vals);
     
     [Ad,Bd] = c2d(double(A_Continuous), double(B_Continuous), dt);
-    
-    if 0
-        if any(isnan(Ad(:))) || any(isinf(Ad(:)))
-            disp(Ad);
-            error('Ad异常');
-        end
-        if any(isnan(Bd(:))) || any(isinf(Bd(:)))
-            disp(Bd);
-            error('Bd异常');
-        end
-    end
     
     K = dlqr(Ad, Bd, Q, R, 0); % 状态和输入变量之间不存在耦合关系，不需要最后一项交叉加权矩阵
 

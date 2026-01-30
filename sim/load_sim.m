@@ -18,7 +18,12 @@ function result = load_sim(model_type, show_plot)
     elseif model_type == 2
 
     elseif model_type == 3
-
+        result = load('WBR2_sim_param.mat');
+        result.L1 = result.WBR2_SIM.robot_stats.length_thigh;
+        result.L2 = result.WBR2_SIM.robot_stats.length_calf;
+        result.L3 = result.WBR2_SIM.robot_stats.length_calf;
+        result.L4 = result.WBR2_SIM.robot_stats.length_thigh;
+        % TODO: 平衡点拟合参数
     else
         error('\n！未知模型！\n');
     end
