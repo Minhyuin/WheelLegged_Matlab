@@ -5,8 +5,8 @@ classdef WBR < handle
     properties
         % 控制器配置
         CALC_MPC logical = false   % 是否需要计算MPC
-        FIT_K logical = false       % 是否需要拟合K
-        EVALUATE_FITTING_STATS logical = false; % 是否需要评估拟合结果
+        FIT_K logical = true       % 是否需要拟合K
+        EVALUATE_FITTING_STATS logical = true; % 是否需要评估拟合结果
         
         % 机器人参数
         robot_stats struct         % 机器人参数结构体
@@ -93,7 +93,6 @@ classdef WBR < handle
         
         function K = computeLQRForSingleLength(obj, length_left, length_right)
             %COMPUTELQRFORSINGLELENGTH 计算单腿长下的LQR增益
-            %   K = computeLQRForSingleLength(obj, length_left, length_right)
             
             fprintf("计算LQR增益 - 左腿长: %.3f, 右腿长: %.3f\n", ...
                 length_left, length_right);
@@ -101,9 +100,6 @@ classdef WBR < handle
             K = obj.calc_LQR_K(obj.Q, obj.R, ...
                 length_left, length_right, obj.control_freq, ...
                 obj.robot_stats, obj.status_matrix);
-            
-            % 保存结果
-            obj.K = K;
         end
         
         function computeAndFitK(obj)
@@ -178,7 +174,7 @@ classdef WBR < handle
             obj.polyfitnToCppOptimal(obj.K_sym, 'LQR_K_DATA');
         end
         
-        function displayComputationStats(obj, calc_time, total_samples)
+        function displayComputationStats(~, calc_time, total_samples)
             %DISPLAYCOMPUTATIONSTATS 显示计算统计信息
             
             fprintf('计算完成！\n');
@@ -197,7 +193,7 @@ classdef WBR < handle
             
             % 调用拟合函数
             [obj.K_sym, obj.K_sim_param] = ...
-                obj.polyfitn_K(obj.X_data, obj.K_data, obj.poly_rank, obj.EVALUATE_FITTING_STATS);
+                obj.polyfitn_matrix(obj.X_data, obj.K_data, obj.poly_rank, obj.EVALUATE_FITTING_STATS);
             
             fprintf('多项式拟合完成！\n');
         end
@@ -239,14 +235,14 @@ classdef WBR < handle
     
     methods (Access = private)
         % 这些方法假设已经在路径中定义
-        function K = calc_LQR_K(obj, Q, R, length_left, length_right, freq, robot_stats, status_matrix)
+        function K = calc_LQR_K(~, Q, R, length_left, length_right, freq, robot_stats, status_matrix)
             K = WBR_calc_LQR_K(Q, R, length_left, length_right, ...
                 freq, robot_stats, status_matrix);
         end
         
-        function [K_sym, K_sim_param] = polyfitn_K(obj, X_data, K_data, rank, verbose)
+        function [K_sym, K_sim_param] = polyfitn_matrix(~, X_data, K_data, rank, verbose)
             %POLYFITN_K 多项式拟合K矩阵（包装外部函数）
-            [K_sym, K_sim_param] = polyfitn_K(X_data, K_data, rank, verbose);
+            [K_sym, K_sim_param] = polyfitn_matrix(X_data, K_data, rank, verbose);
         end
     end
 end

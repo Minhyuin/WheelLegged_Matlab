@@ -1,4 +1,4 @@
-function [K, X] = WBR2_calc_LQR_K(Q, R, length_left, length_right, control_freq, STATS_FILE, MASS_MATRIX)
+function [K, OX] = WBR2_calc_LQR_K(Q, R, length_left, length_right, control_freq, STATS_FILE, MASS_MATRIX)
     % 计算指定腿长下的K矩阵（4 * 10），模型：WBR2
     % 因线性化的位置（平衡点）会随着腿长变化，故每次都要重算一遍AB矩阵
     dt = 1 / control_freq;
@@ -8,16 +8,18 @@ function [K, X] = WBR2_calc_LQR_K(Q, R, length_left, length_right, control_freq,
     M_fit = simplify(subs(MASS_MATRIX.M_sym, sym_vars, sym_vals));
     B_fit = simplify(subs(MASS_MATRIX.B_sym, sym_vars, sym_vals));
     g_fit = simplify(subs(MASS_MATRIX.g_sym, sym_vars, sym_vals));
-    
+
     %% 求解平衡点
     % ========== 广义坐标及其导数 ==========
     syms X_b_h dX_b_h ddX_b_h real
     syms phi dphi ddphi real
+    syms theta_b theta_l theta_r real
     syms dtheta_l ddtheta_l real
     syms dtheta_r ddtheta_r real
     syms dtheta_b ddtheta_b real
     % ========== 控制力矩 ==========
     syms T_r_to_b T_l_to_b T_wr_to_r T_wl_to_l real
+    
     eq_subs_partial = {
         dtheta_l, 0;
         dtheta_r, 0;
@@ -109,7 +111,7 @@ function [K, X] = WBR2_calc_LQR_K(Q, R, length_left, length_right, control_freq,
 
     [Ad, Bd] = c2d(A_fit_num, B_fit_num, dt);
     K = dlqr(Ad, Bd, Q, R, 0); % 状态和输入变量之间不存在耦合关系，不需要最后一项交叉加权矩阵
-    X = [l_l_fit, l_r_fit, theta_star_fit']; % 5个平衡点
+    OX = theta_star_fit'; % 3个偏移平衡点: 左腿摆角、右腿摆角、底盘俯仰角
 end
 
 function [sym_vars, sym_vals] = compute_state(length_left, length_right, STATS_FILE, STATE_SPACE_FILE)
@@ -125,8 +127,8 @@ function [sym_vars, sym_vals] = compute_state(length_left, length_right, STATS_F
     I_wl = STATE_SPACE_FILE.I_wl;
     I_wr = STATE_SPACE_FILE.I_wr;
     I_yaw = STATE_SPACE_FILE.I_yaw;
-    l_l = length_left;
-    l_r = length_right;
+    l_l = STATE_SPACE_FILE.l_l;
+    l_r = STATE_SPACE_FILE.l_r;
     l_l_d = STATE_SPACE_FILE.l_l_d;
     l_r_d = STATE_SPACE_FILE.l_r_d;
     l_b = STATE_SPACE_FILE.l_b;

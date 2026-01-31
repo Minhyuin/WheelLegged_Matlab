@@ -23,7 +23,6 @@ MODEL = 0; % 模型选择，0: WBR(全身建模) | 1: WL(单腿建模) | 2: ST(�
 robot_stats_file  = 'robot_stats.mat';
 if exist(robot_stats_file, 'file')
     fprintf('检测到已存在 %s...\n', robot_stats_file);
-    robot_stats = load(robot_stats_file);
 else
     fprintf('%s 不存在，尝试生成...\n', robot_stats_file);
     stats();
@@ -37,9 +36,9 @@ if MODEL == 0
 elseif MODEL == 1
     startup_WL_class(robot_stats);
 elseif MODEL == 2
-    status_ST_class(robot_stats);
+    startup_ST_class(robot_stats);
 elseif MODEL == 3
-    status_WBR2_class(robot_stats);
+    startup_WBR2_class(robot_stats);
 else
     error('\n！未知模型！\n');
 end
@@ -70,7 +69,7 @@ end
 function startup_ST_class(robot_stats)
     fprintf('\n=== ST控制器设计完成 ===\n');
 end
-
+ 
 %% WBR2启动函数
 function startup_WBR2_class(robot_stats)
     controller = WBR2(robot_stats);

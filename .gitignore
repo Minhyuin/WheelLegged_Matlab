@@ -1,6 +1,7 @@
 # script data
 *.mat
 *.asv
+fitting_results/
 
 # simulate
 slprj/

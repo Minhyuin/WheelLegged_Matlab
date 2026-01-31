@@ -5,27 +5,32 @@ classdef WBR2 < handle
     properties
         % 控制器配置
         CALC_MPC logical = false   % 是否需要计算MPC
-        FIT_K logical = false       % 是否需要拟合K
-        EVALUATE_FITTING_STATS logical = false; % 是否需要评估拟合结果
+        FIT_K logical = true       % 是否需要拟合K
+        EVALUATE_FITTING_STATS logical = true; % 是否需要评估拟合结果
         
         % 机器人参数
         robot_stats struct         % 机器人参数结构体
         
         % 状态矩阵数据
-        status_matrix struct       % 从文件加载的状态矩阵
+        mass_matrix struct       % 从文件加载的状态矩阵
 
         % 计算结果
         K                          % LQR增益矩阵
+        OX                         % 平衡点
         K_data                     % 拟合数据
+        OX_data                    % 平衡点拟合数据
         X_data                     % 腿长采样数据
+        OX_sym                     % 符号化平衡点拟合结果
+        OX_sim_param               % 平衡点拟合参数
         K_sym                      % 符号化拟合结果
-        K_sim_param          % 拟合参数
+        K_sim_param                % 拟合参数
     end
     
     properties (SetAccess = private)
         % 模型维度
         N_x double = 10            % 状态变量维度
         N_u double = 4             % 控制输入维度
+        N_ox double = 3            % 平衡点维度
         
         % 权重矩阵
         Q                          % 状态权重矩阵
@@ -78,32 +83,28 @@ classdef WBR2 < handle
         function loadOrGenerateStatusMatrix(obj)
             %LOADORGENERATESTATUSMATRIX 加载或生成状态矩阵文件
             
-            status_matrix_file = 'A10_B4.mat';
+            mass_matrix_file = 'WBR2_MASS.mat';
             
-            if exist(status_matrix_file, 'file')
-                fprintf('检测到已存在 %s...\n', status_matrix_file);
-                obj.status_matrix = load(status_matrix_file);
+            if exist(mass_matrix_file, 'file')
+                fprintf('检测到已存在 %s...\n', mass_matrix_file);
+                obj.mass_matrix = load(mass_matrix_file);
             else
-                fprintf('%s 不存在，尝试生成...\n', status_matrix_file);
-                WBR_generate_state_space();
-                obj.status_matrix = load(status_matrix_file);
-                fprintf('%s 生成完毕\n', status_matrix_file);
+                fprintf('%s 不存在，尝试生成...\n', mass_matrix_file);
+                WBR2_generate_kinematics();
+                obj.mass_matrix = load(mass_matrix_file);
+                fprintf('%s 生成完毕\n', mass_matrix_file);
             end
         end
         
-        function K = computeLQRForSingleLength(obj, length_left, length_right)
-            %COMPUTELQRFORSINGLELENGTH 计算单腿长下的LQR增益
-            %   K = computeLQRForSingleLength(obj, length_left, length_right)
+        function [K, OX] = computeLQRForSingleLengthWithOffset(obj, length_left, length_right)
+            %COMPUTELQRFORSINGLELENGTH 计算单腿长下的LQR增益矩阵和平衡点
             
-            fprintf("计算LQR增益 - 左腿长: %.3f, 右腿长: %.3f\n", ...
+            fprintf("计算LQR增益和偏移平衡点 - 左腿长: %.3f, 右腿长: %.3f\n", ...
                 length_left, length_right);
             
-            K = obj.calc_LQR_K(obj.Q, obj.R, ...
+            [K, OX] = obj.calc_LQR_K_OX(obj.Q, obj.R, ...
                 length_left, length_right, obj.control_freq, ...
-                obj.robot_stats, obj.status_matrix);
-            
-            % 保存结果
-            obj.K = K;
+                obj.robot_stats, obj.mass_matrix);
         end
         
         function computeAndFitK(obj)
@@ -115,10 +116,11 @@ classdef WBR2 < handle
                 length_right = obj.default_length;
                 fprintf("左腿长: %.3f, 右腿长: %.3f\n", length_left, length_right);
                 
-                obj.K = obj.computeLQRForSingleLength(length_left, length_right);
+                [obj.K, obj.OX] = obj.computeLQRForSingleLengthWithOffset(length_left, length_right);
                 
                 % 转换为C++代码
                 obj.matrixToCpp(obj.K, 'LQR_K_DATA');
+                obj.matrixToCpp(obj.OX, 'LQR_OX_DATA');
                 return;
             end
             
@@ -132,13 +134,14 @@ classdef WBR2 < handle
             
             % 预分配存储空间
             obj.K_data = zeros(TOTAL_N_SAMPLES, obj.N_u, obj.N_x);
+            obj.OX_data = zeros(TOTAL_N_SAMPLES, obj.N_ox);
             obj.X_data = zeros(TOTAL_N_SAMPLES, 2);
             
             % 计算进度显示
             sample_idx = 0;
             calc_start_time = tic;
             
-            fprintf('K计算进度: 0%%');
+            fprintf('K与OX计算进度: 0%%');
             
             % 遍历所有采样点
             for l_idx = 1:numel(L_left_list)
@@ -148,13 +151,14 @@ classdef WBR2 < handle
                     length_right = L_right_list(r_idx);
                     sample_idx = sample_idx + 1;
                     
-                    % 计算当前腿长下的K矩阵
-                    current_K = obj.calc_LQR_K(obj.Q, obj.R, ...
+                    % 计算当前腿长下的K矩阵和平衡点
+                    [current_K, current_OX] = obj.calc_LQR_K_OX(obj.Q, obj.R, ...
                         length_left, length_right, obj.control_freq, ...
-                        obj.robot_stats, obj.status_matrix);
+                        obj.robot_stats, obj.mass_matrix);
                     
                     % 保存数据
                     obj.X_data(sample_idx, :) = [length_left, length_right];
+                    obj.OX_data(sample_idx, :) = current_OX;
                     obj.K_data(sample_idx, :, :) = current_K;
                     
                     % 更新进度显示
@@ -173,12 +177,14 @@ classdef WBR2 < handle
             
             % 多项式拟合
             obj.fitKMatrix();
+            obj.fitOXMatrix();
             
             % 生成C++代码
             obj.polyfitnToCppOptimal(obj.K_sym, 'LQR_K_DATA');
+            obj.polyfitnToCppOptimal(obj.OX_sym, 'LQR_OX_DATA');
         end
         
-        function displayComputationStats(obj, calc_time, total_samples)
+        function displayComputationStats(~, calc_time, total_samples)
             %DISPLAYCOMPUTATIONSTATS 显示计算统计信息
             
             fprintf('计算完成！\n');
@@ -193,23 +199,36 @@ classdef WBR2 < handle
             
             %FITKMATRIX 使用多项式拟合K矩阵
             
-            fprintf('正在进行多项式拟合 (阶数: %d)...\n', obj.poly_rank);
+            fprintf('\n正在进行多项式拟合 (阶数: %d)...\n', obj.poly_rank);
             
             % 调用拟合函数
             [obj.K_sym, obj.K_sim_param] = ...
-                obj.polyfitn_K(obj.X_data, obj.K_data, obj.poly_rank, obj.EVALUATE_FITTING_STATS);
+                obj.polyfitn_matrix(obj.X_data, obj.K_data, obj.poly_rank, obj.EVALUATE_FITTING_STATS);
             
             fprintf('多项式拟合完成！\n');
         end
 
+        function fitOXMatrix(obj)
+            %FITOXMATRIX 使用多项式拟合平衡点矩阵
+            
+            fprintf('\n正在进行平衡点多项式拟合 (阶数: %d)...\n', obj.poly_rank);
+            
+            % 调用拟合函数
+            [obj.OX_sym, obj.OX_sim_param] = ...
+                obj.polyfitn_matrix(obj.X_data, obj.OX_data, obj.poly_rank, obj.EVALUATE_FITTING_STATS);
+            
+            fprintf('平衡点多项式拟合完成！\n');
+        end
+
         function saveSimParam(obj, filename)
             %SAVESIMPARAM 保存仿真所需的拟合系数计算结果
-            WBR_SIM = struct();
-            WBR_SIM.timestamp = datetime('now');
-            WBR_SIM.robot_stats = obj.robot_stats;
-            WBR_SIM.K_sim_param = obj.K_sim_param;
+            WBR2_SIM = struct();
+            WBR2_SIM.timestamp = datetime('now');
+            WBR2_SIM.robot_stats = obj.robot_stats;
+            WBR2_SIM.K_sim_param = obj.K_sim_param;
+            WBR2_SIM.OX_sim_param = obj.OX_sim_param;
             
-            save(filename, 'WBR_SIM');
+            save(filename, 'WBR2_SIM');
             fprintf('拟合系数参数已保存到: %s\n', filename);
         end
     end
@@ -239,14 +258,14 @@ classdef WBR2 < handle
     
     methods (Access = private)
         % 这些方法假设已经在路径中定义
-        function K = calc_LQR_K(obj, Q, R, length_left, length_right, freq, robot_stats, status_matrix)
-            K = WBR_calc_LQR_K(Q, R, length_left, length_right, ...
-                freq, robot_stats, status_matrix);
+        function [K, OX] = calc_LQR_K_OX(~, Q, R, length_left, length_right, freq, robot_stats, mass_matrix)
+            [K, OX] = WBR2_calc_LQR_K(Q, R, length_left, length_right, ...
+                freq, robot_stats, mass_matrix);
         end
         
-        function [K_sym, K_sim_param] = polyfitn_K(obj, X_data, K_data, rank, verbose)
+        function [K_sym, K_sim_param] = polyfitn_matrix(~, X_data, K_data, rank, verbose)
             %POLYFITN_K 多项式拟合K矩阵（包装外部函数）
-            [K_sym, K_sim_param] = polyfitn_K(X_data, K_data, rank, verbose);
+            [K_sym, K_sim_param] = polyfitn_matrix(X_data, K_data, rank, verbose);
         end
     end
 end

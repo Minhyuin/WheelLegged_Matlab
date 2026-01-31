@@ -237,7 +237,7 @@ classdef WL < handle
         
         function [K_sym, K_sim_param] = polyfitn_K(obj, X_data, K_data, rank, verbose)
             %POLYFITN_K 多项式拟合K矩阵（包装外部函数）
-            [K_sym, K_sim_param] = polyfitn_K(X_data, K_data, rank, verbose);
+            [K_sym, K_sim_param] = polufitn_matrix(X_data, K_data, rank, verbose);
         end
     end
 end
