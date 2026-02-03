@@ -6,7 +6,7 @@ classdef WBR < handle
         % 控制器配置
         CALC_MPC logical = false   % 是否需要计算MPC
         FIT_K logical = true       % 是否需要拟合K
-        EVALUATE_FITTING_STATS logical = true; % 是否需要评估拟合结果
+        EVALUATE_FITTING_STATS logical = false; % 是否需要评估拟合结果
         
         % 机器人参数
         robot_stats struct         % 机器人参数结构体
@@ -192,9 +192,11 @@ classdef WBR < handle
             fprintf('正在进行多项式拟合 (阶数: %d)...\n', obj.poly_rank);
             
             % 调用拟合函数
-            [obj.K_sym, obj.K_sim_param] = ...
+            [obj.K_sym, K_sim_cell] = ...
                 obj.polyfitn_matrix(obj.X_data, obj.K_data, obj.poly_rank, obj.EVALUATE_FITTING_STATS);
             
+            obj.K_sim_param = convert_cell_to_array(K_sim_cell, obj.N_u, obj.N_x, obj.poly_rank, 2);
+
             fprintf('多项式拟合完成！\n');
         end
 
