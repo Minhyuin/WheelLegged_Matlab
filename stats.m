@@ -15,13 +15,13 @@ function stats()
     % 【腿】包含了从髋关节开始以下的所有部分，包含大腿、膝关节、小腿、驱动轮（踝关节）
     % 【机体】即机器人整机除去腿外的部分，包含底盘、云台、发射机构
     
-    mass_total = 14.52; % 整机称重可得
+    mass_total = 16.245; % 整机称重可得
     
-    inertia_z = 0.2296; % 机器人绕z轴（中心）转动惯量 （实际在现实中并非常量，这里简化为常量
+    inertia_z = 0.44912455; % 机器人绕z轴（中心）转动惯量 （实际在现实中并非常量，这里简化为常量
     
-    distance_body_hip = -0.0352; % 机体质心到髋关节的距离
+    distance_body_hip = -0.06024; % 机体质心到髋关节的距离
     
-    distance_wheel = 0.32+0.05; % 左右驱动轮轮距
+    distance_wheel = 0.4611; % 左右驱动轮轮距
     distance_half_wheel = distance_wheel / 2; % 左右驱动轮轮距 / 2
     
     %% 腿 %%
@@ -29,26 +29,26 @@ function stats()
     length_thigh = 0.210; % 大腿长;
     length_calf = 0.250; % 小腿长;
 
-    mass_thigh_aver = 0.215; % 单根大腿质量（几何上等效）
-    mass_calf_aver = 0.325; % 单根小腿质量 (几何上等效)
-    mass_leg_other_aver = 0; % 除主结构大腿和小腿外的质量（如轴承、额外连杆等）
-    mass_leg_aver = mass_thigh_aver + mass_calf_aver + mass_leg_other_aver; % 假设两腿等价，单腿的质量
+    mass_thigh_aver = 0.37838157; % 单根大腿质量（几何上等效）
+    mass_calf_aver = 0.36700000; % 单根小腿质量 (几何上等效)
+    mass_leg_aver = 1.43744054; % 假设两腿等价，单腿的质量
+    mass_leg_other_aver = mass_leg_aver - mass_thigh_aver - mass_calf_aver; % 除主结构大腿和小腿外的质量（如轴承、额外连杆等）
     mass_leg_left = mass_leg_aver; % 左腿整腿质量
     mass_leg_right = mass_leg_aver; % 右腿整腿质量
     
-    mass_wheel_motor_aver = 0.880; % 轮毂电机质量
-    mass_wheel_other_aver = 0.500; % 轮毂其他加工件质量
+    mass_wheel_motor_aver = 0.334; % 轮毂电机质量
+    mass_wheel_other_aver = 0.179; % 轮毂其他加工件质量
     mass_wheel_aver = mass_wheel_motor_aver + mass_wheel_other_aver; % 假设两轮等价，单轮的质量 
     mass_wheel_left = mass_wheel_aver; % 左轮毂质量
     mass_wheel_right = mass_wheel_aver; % 右轮毂质量
     
     mass_leg_total = mass_leg_left + mass_leg_right + mass_wheel_left + mass_wheel_right;
     
-    diameter_wheel = 0.200; % 驱动轮直径
+    diameter_wheel = 0.11704; % 驱动轮直径
     radius_wheel = diameter_wheel / 2; % 驱动轮半径
     
     % inertia_wheel_aver =  0.5 * mass_wheel_aver * radius_wheel^2;
-    inertia_wheel_aver = 0.0069; % 驱动轮绕轮新转动惯量
+    inertia_wheel_aver = 0.00063738; % 驱动轮绕轮心转动惯量
     
     %%% 随腿运动学变化而变化的量 %%%
     
@@ -71,7 +71,7 @@ function stats()
                         0.241,  0.14249327,  0.13226890,  0.06616272;
                         0.251,  0.14531306,  0.13699585,  0.06932031;
                         0.261,  0.14814065,  0.14175666,  0.07261011;
-                        0.271,  0.17096613,  0.14654822,  0.07603232;
+                        0.271,  0.15096613,  0.14654822,  0.07603232;
                         0.281,  0.15377891,  0.15136782,  0.07958718;
                         0.291,  0.15656758,  0.15621312,  0.08327491;
                         0.301,  0.15931976,  0.16108205,  0.08709576;
@@ -94,13 +94,13 @@ function stats()
     
     %% 机体 %%
     mass_body = mass_total - mass_leg_total; % 机体质量
-    inertia_body = 0.3870; % 机体绕髋关节转动惯量
-    body_centroid_offset_ang = deg2rad(0); % 机体质心偏移角度（从机体方向指向质心，逆时针正方向）
+    inertia_body = 0.16716579; % 机体绕髋关节转动惯量
+    body_centroid_offset_ang = 0.3522576; % 机体质心偏移角度（从机体方向指向质心，逆时针正方向）
     
     % 底盘三维
-    chassis_length = 0.304;
-    chassis_width = 0.312;
-    chassis_height = 0.176;
+    chassis_length = 0.51879;
+    chassis_width = 0.56580;
+    chassis_height = 0.19300;
     
     % 云台三维
     gimbal_length = 0.3;
@@ -108,14 +108,14 @@ function stats()
     gimbal_height = 0.3;
     
     %% 物理极限 %%
-    max_torque_wheel=3.94; % 轮毂最大连续输出力矩
-    max_rpm_wheel=280; % 轮毂最大瞬时转速
+    max_torque_wheel = 3.94; % 轮毂最大连续输出力矩
+    max_rpm_wheel = 280; % 轮毂最大瞬时转速
 
-    max_torque_joint=40; % 腿关节最大连续输出力矩
-    max_rpm_joint=300; % 腿关节最大瞬时转速
+    max_torque_joint = 40; % 腿关节最大连续输出力矩
+    max_rpm_joint = 300; % 腿关节最大瞬时转速
 
-    leg_length_max = 0.3;
-    leg_length_min = 0.1;
+    leg_length_max = 0.36998937;
+    leg_length_min = 0.16051326;
     
     %% 存参 %%
     save robot_stats.mat 
