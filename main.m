@@ -18,7 +18,7 @@ disp("开始计时");
 
 %% 配置项 %%
 MODEL = 0; % 模型选择，0: WBR(全身建模) | 1: WL(单腿建模) | 2: ST(板凳建模) | 3：WBR2(优化平衡点的全身建模)
-SIM_ENABLE = false; % 是否需要参与仿真
+SIM_ENABLE = true; % 是否需要参与仿真
 
 %% 加载必要物理参数 %%
 robot_stats_file  = 'robot_stats.mat';

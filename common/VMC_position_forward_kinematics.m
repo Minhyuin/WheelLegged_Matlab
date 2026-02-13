@@ -2,8 +2,6 @@ function [all_solutions] = VMC_position_forward_kinematics(L0, phi0, L1, L2, L3,
     % 寻找所有可能的正解
     %   注意，摆杆长度为正数，摆杆角度零点位置为摆杆竖直，详细见
     %   https://jjyczursn9.feishu.cn/wiki/IW2BwNm7GiU5gZkxX96c0rd5nxe?from=from_copylink
-
-    fprintf("\n=== 正在运行" + mfilename + ".m ===\n");
     
     % 首先计算C点坐标
     phiC = phi0 + pi/2;

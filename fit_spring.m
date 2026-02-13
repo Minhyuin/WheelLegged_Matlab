@@ -4,6 +4,20 @@ clear
 clc
 fprintf("\n=== 气弹簧夹角随腿长变化分析 ===\n");
 
+%% 导入参数
+currentDir = fileparts(mfilename('fullpath'));  % 获取当前脚本所在目录
+commonPath = fullfile(currentDir, 'common');   % 构建 common 文件夹路径
+addpath(commonPath);
+
+robot_stats_file  = 'robot_stats.mat';
+if exist(robot_stats_file, 'file')
+    fprintf('检测到已存在 %s...\n', robot_stats_file);
+else
+    fprintf('%s 不存在，尝试生成...\n', robot_stats_file);
+    stats();
+    fprintf('%s 生成完毕\n', robot_stats_file);
+end
+robot_stats = load(robot_stats_file);
 %% 数据项
 % 第一列为腿长L (m)
 % 第二列为气弹簧与腿长方向夹角 alpha (rad)
@@ -75,7 +89,7 @@ ylabel('夹角 α (rad)', 'FontSize', 12);
 legend('Location', 'best', 'FontSize', 11);
 
 % 显示拟合方程和R²值
-eq_str = '拟合方程: α = ';
+eq_str = '拟合方程: alpha = ';
 for i = 1:length(p)
     power = length(p) - i;
     if power > 1
@@ -86,6 +100,7 @@ for i = 1:length(p)
         eq_str = [eq_str, sprintf('%.4f', p(i))];
     end
 end
+disp(eq_str);
 text(0.05, 0.95, eq_str, 'Units', 'normalized', 'FontSize', 10, ...
     'BackgroundColor', [1, 1, 1, 0.9], 'EdgeColor', 'black', 'FontWeight', 'bold');
 
@@ -93,25 +108,89 @@ text(0.05, 0.88, sprintf('R² = %.6f\nRMSE = %.6f rad', r2, rmse), ...
     'Units', 'normalized', 'FontSize', 10, ...
     'BackgroundColor', [1, 1, 1, 0.9], 'EdgeColor', 'black');
 
-%% 生成拟合函数
-fprintf("\n=== 拟合函数 ===\n");
-fprintf("使用以下函数计算任意腿长L对应的夹角α(rad):\n\n");
+%% 绘制气弹簧分力 Fx 和 Fy 曲线
+N = 150;            % 气弹簧推力 (N)
 
-% 显示函数代码
-function_code = ['function alpha = spring_angle(L)\n' ...
-    '    % 计算气弹簧与腿长方向的夹角(rad)\n' ...
-    '    % 输入: L - 腿长(m)\n' ...
-    '    % 输出: alpha - 夹角(rad)\n' ...
-    '    \n' ...
-    '    % 3阶多项式拟合系数\n'];
-for i = 1:length(p)
-    function_code = [function_code sprintf('    p(%d) = %.8f; %% L^%d系数\n', i, p(i), length(p)-i)];
+% 根据拟合夹角计算分力
+alpha_fit_forTpFd = polyval(p, L_fit);   % 拟合得到的连续夹角
+Fx_fit = N * sin(alpha_fit_forTpFd);     % 切向分力
+Fy_fit = N * cos(alpha_fit_forTpFd);     % 法向分力
+
+% 同时计算原始数据点对应的分力（用于散点验证）
+alpha_data = alpha_rad;                  % 原始夹角
+Fx_data = N * sin(alpha_data);
+Fy_data = N * cos(alpha_data);
+
+% 新建分力图窗
+figure('Position', [150, 100, 900, 500]);
+subplot(1,2,1);
+hold on; grid on; box on;
+plot(L_fit, Fx_fit, 'r-', 'LineWidth', 2, 'DisplayName', 'Fx (拟合)');
+scatter(L, Fx_data, 60, 'b', 'filled', 'DisplayName', '原始点');
+xlabel('腿长 L (m)'); ylabel('切向分力 Fx (N)');
+title('Fx = N0·sin(α)'); legend('Location', 'best');
+
+subplot(1,2,2);
+hold on; grid on; box on;
+plot(L_fit, Fy_fit, 'b-', 'LineWidth', 2, 'DisplayName', 'Fy (拟合)');
+scatter(L, Fy_data, 60, 'r', 'filled', 'DisplayName', '原始点');
+xlabel('腿长 L (m)'); ylabel('法向分力 Fy (N)');
+title('Fy = N0·cos(α)'); legend('Location', 'best');
+sgtitle(sprintf('气弹簧分力随腿长变化 (推力 N0 = %d N)', N), 'FontSize', 14, 'FontWeight', 'bold');
+
+fprintf("\n分力范围: Fx [%.2f, %.2f] N, Fy [%.2f, %.2f] N\n", ...
+    min(Fx_fit), max(Fx_fit), min(Fy_fit), max(Fy_fit));
+
+%% ========== 等效关节力矩 tau1 / tau4 计算 ==========
+% 预分配数组
+tau1_data = zeros(size(L));
+tau4_data = zeros(size(L));
+
+fprintf("\n正在计算等效关节力矩...\n");
+L1 = robot_stats.length_thigh;
+L2 = robot_stats.length_calf;
+L3 = robot_stats.length_calf;
+L4 = robot_stats.length_thigh;
+L5 = 0;
+for i = 1:numel(L)
+    L0 = L(i);  % 当前腿长
+
+    % 正向运动学：求解关节角度（取phi1大的无机械干涉，即第二组解）
+    all_solutions = VMC_position_forward_kinematics(L0, 0, L1, L2, L3, L4, L5);
+    phi1 = all_solutions(2, 1);   % 髋关节角度
+    phi4 = all_solutions(2, 4);   % 踝关节角度
+
+    % 力矩前向动力学：计算等效关节力矩（Fx为不许关注的内力）
+    [tau1_data(i), tau4_data(i)] = VMC_torque_forward_kinematics(...
+        0, Fy_data(i), phi1, phi4, L1, L2, L3, L4, L5);
 end
-function_code = [function_code '    \n' ...
-    '    alpha = polyval(p, L);\n' ...
-    'end\n'];
+fprintf("力矩计算完成。\n");
 
-fprintf(function_code);
+% 绘制 tau1 / tau4 曲线
+figure('Position', [200, 100, 800, 500]);
+hold on; grid on; box on;
+
+% tau1 (髋关节) —— 蓝色方块线
+plot(L, tau1_data, 'bo-', 'LineWidth', 1.5, 'MarkerSize', 6, ...
+    'MarkerFaceColor', 'b', 'DisplayName', '\tau_1 (髋关节1)');
+
+% tau4 (踝关节) —— 红色圆点线
+plot(L, tau4_data, 'rs-', 'LineWidth', 1.5, 'MarkerSize', 6, ...
+    'MarkerFaceColor', 'r', 'DisplayName', '\tau_4 (髋关节4)');
+
+xlabel('腿长 L (m)', 'FontSize', 12);
+ylabel('等效关节力矩 (N·m)', 'FontSize', 12);
+title('气弹簧推力引起的关节等效力矩', 'FontSize', 14, 'FontWeight', 'bold');
+legend('Location', 'best');
+grid on;
+
+% 添加零线参考（若力矩有正负变化）
+yline(0, 'k--', 'LineWidth', 1, 'HandleVisibility', 'off');
+
+% 输出力矩范围
+fprintf("\n关节力矩范围:\n");
+fprintf("  tau1: [%.3f, %.3f] N·m\n", min(tau1_data), max(tau1_data));
+fprintf("  tau4: [%.3f, %.3f] N·m\n", min(tau4_data), max(tau4_data));
 
 %% 保存结果
 save('spring_fit_result.mat', 'L', 'alpha_rad', 'p', 'r2', 'rmse');
