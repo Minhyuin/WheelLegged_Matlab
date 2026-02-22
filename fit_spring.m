@@ -88,28 +88,13 @@ xlabel('腿长 L (m)', 'FontSize', 12);
 ylabel('夹角 α (rad)', 'FontSize', 12);
 legend('Location', 'best', 'FontSize', 11);
 
-% 显示拟合方程和R²值
-eq_str = '拟合方程: alpha = ';
-for i = 1:length(p)
-    power = length(p) - i;
-    if power > 1
-        eq_str = [eq_str, sprintf('%.4fL^{%d} + ', p(i), power)];
-    elseif power == 1
-        eq_str = [eq_str, sprintf('%.4fL + ', p(i))];
-    else
-        eq_str = [eq_str, sprintf('%.4f', p(i))];
-    end
-end
-disp(eq_str);
-text(0.05, 0.95, eq_str, 'Units', 'normalized', 'FontSize', 10, ...
-    'BackgroundColor', [1, 1, 1, 0.9], 'EdgeColor', 'black', 'FontWeight', 'bold');
-
+% 显示R²值
 text(0.05, 0.88, sprintf('R² = %.6f\nRMSE = %.6f rad', r2, rmse), ...
     'Units', 'normalized', 'FontSize', 10, ...
     'BackgroundColor', [1, 1, 1, 0.9], 'EdgeColor', 'black');
 
 %% 绘制气弹簧分力 Fx 和 Fy 曲线
-N = 150;            % 气弹簧推力 (N)
+N = 90;            % 气弹簧推力 (N)
 
 % 根据拟合夹角计算分力
 alpha_fit_forTpFd = polyval(p, L_fit);   % 拟合得到的连续夹角
@@ -152,17 +137,17 @@ L2 = robot_stats.length_calf;
 L3 = robot_stats.length_calf;
 L4 = robot_stats.length_thigh;
 L5 = 0;
-for i = 1:numel(L)
-    L0 = L(i);  % 当前腿长
+for i = 1:numel(L_fit)
+    L0 = L_fit(i);  % 当前腿长
 
     % 正向运动学：求解关节角度（取phi1大的无机械干涉，即第二组解）
     all_solutions = VMC_position_forward_kinematics(L0, 0, L1, L2, L3, L4, L5);
     phi1 = all_solutions(2, 1);   % 髋关节角度
     phi4 = all_solutions(2, 4);   % 踝关节角度
 
-    % 力矩前向动力学：计算等效关节力矩（Fx为不许关注的内力）
+    % 力矩前向动力学：计算等效关节力矩（Fx为不需关注的内力）
     [tau1_data(i), tau4_data(i)] = VMC_torque_forward_kinematics(...
-        0, Fy_data(i), phi1, phi4, L1, L2, L3, L4, L5);
+        0, Fy_fit(i), phi1, phi4, L1, L2, L3, L4, L5);
 end
 fprintf("力矩计算完成。\n");
 
@@ -171,11 +156,11 @@ figure('Position', [200, 100, 800, 500]);
 hold on; grid on; box on;
 
 % tau1 (髋关节) —— 蓝色方块线
-plot(L, tau1_data, 'bo-', 'LineWidth', 1.5, 'MarkerSize', 6, ...
+plot(L_fit, tau1_data, 'bo-', 'LineWidth', 1.5, 'MarkerSize', 6, ...
     'MarkerFaceColor', 'b', 'DisplayName', '\tau_1 (髋关节1)');
 
 % tau4 (踝关节) —— 红色圆点线
-plot(L, tau4_data, 'rs-', 'LineWidth', 1.5, 'MarkerSize', 6, ...
+plot(L_fit, tau4_data, 'rs-', 'LineWidth', 1.5, 'MarkerSize', 6, ...
     'MarkerFaceColor', 'r', 'DisplayName', '\tau_4 (髋关节4)');
 
 xlabel('腿长 L (m)', 'FontSize', 12);
@@ -192,10 +177,57 @@ fprintf("\n关节力矩范围:\n");
 fprintf("  tau1: [%.3f, %.3f] N·m\n", min(tau1_data), max(tau1_data));
 fprintf("  tau4: [%.3f, %.3f] N·m\n", min(tau4_data), max(tau4_data));
 
-%% 保存结果
-save('spring_fit_result.mat', 'L', 'alpha_rad', 'p', 'r2', 'rmse');
-fprintf('\n结果已保存到 spring_fit_result.mat\n');
+%% 将拟合结果转换为浮点数表达式
+prec = 6;   % 精度
+expr = poly2cstring(p, 'l', prec);
+fprintf('float alpha = %s\n', expr);
 
 %% 显示执行时间
 toc
 fprintf("\n=== 分析完成 ===\n");
+
+%% 辅助打印输出函数
+function expr = poly2cstring(p, var, prec)
+    % p       : 多项式系数，从高次到低次（polyfit 输出格式）
+    % var     : 自变量符号，例如 'l'
+    % prec    : 小数位数
+    % expr    : 生成的表达式字符串，例如 '1.23f*lll - 0.45f*ll + 6.78f*l - 9.01f'
+    n = length(p) - 1;          % 多项式的最高次数
+    terms = {};                  % 存储各项字符串
+    for k = 0:n
+        coef = p(n - k + 1);     % 取出 k 次项系数（k=0 为常数项）
+        if abs(coef) < 1e-12     % 忽略极小的系数（可调整阈值）
+            continue;
+        end
+        % 格式化系数
+        if abs(round(coef) - coef) < 1e-12    % 判断是否为整数
+            coef_str = sprintf('%d', round(coef));
+        else
+            coef_str = sprintf(['%.', num2str(prec), 'f'], coef);
+            coef_str = [coef_str, 'f'];       %#ok<AGROW> % 末尾加 f
+        end
+        % 构造项字符串
+        if k == 0
+            term = coef_str;                   % 常数项
+        else
+            pow_str = repmat(var, 1, k);       % 幂次表示：l, ll, lll, ...
+            if abs(coef - 1) < 1e-12
+                term = pow_str;                 % 系数为 1 时省略
+            elseif abs(coef + 1) < 1e-12
+                term = ['-', pow_str];          % 系数为 -1 时保留负号
+            else
+                term = [coef_str, '*', pow_str];
+            end
+        end
+        terms{end+1} = term; %#ok<AGROW>
+    end
+    % 将各项用加号连接，处理负号
+    expr = terms{1};
+    for i = 2:length(terms)
+        if terms{i}(1) == '-'
+            expr = [expr, terms{i}];            %#ok<AGROW> % 负项直接拼接
+        else
+            expr = [expr, '+', terms{i}]; %#ok<AGROW>
+        end
+    end
+end

@@ -1,4 +1,4 @@
-function [phi2, phi3] = VMC_calc_phi2_phi3(phi1, phi4, L1, L2, L3, L4, L5)
+function [phi2, phi3] = calc_phi2_phi3(phi1, phi4, L1, L2, L3, L4, L5)
 %CALC_PHI2_PHI3 输入phi1, phi4以及各腿长，输出phi2, phi3
 % temporary I
 sin1 = sin(phi1);
