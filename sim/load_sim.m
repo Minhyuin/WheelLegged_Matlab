@@ -16,7 +16,11 @@ function result = load_sim(model_type, show_plot)
         result.L3 = result.WL_SIM.robot_stats.length_calf;
         result.L4 = result.WL_SIM.robot_stats.length_thigh;
     elseif model_type == 2
-
+        result = load('ST_sim_param.mat');
+        result.L1 = result.ST_SIM.robot_stats.length_thigh;
+        result.L2 = result.ST_SIM.robot_stats.length_calf;
+        result.L3 = result.ST_SIM.robot_stats.length_calf;
+        result.L4 = result.ST_SIM.robot_stats.length_thigh;
     elseif model_type == 3
         result = load('WBR2_sim_param.mat');
         result.L1 = result.WBR2_SIM.robot_stats.length_thigh;

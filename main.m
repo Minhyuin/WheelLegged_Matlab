@@ -17,7 +17,7 @@ disp("清空命令行窗口");
 disp("开始计时");
 
 %% 配置项 %%
-MODEL = 0; % 模型选择，0: WBR(全身建模) | 1: WL(单腿建模) | 2: ST(板凳建模) | 3：WBR2(优化平衡点的全身建模)
+MODEL = 2; % 模型选择，0: WBR(全身建模) | 1: WL(单腿建模) | 2: ST(板凳建模) | 3：WBR2(优化平衡点的全身建模)
 SIM_ENABLE = true; % 是否需要参与仿真
 
 %% 加载必要物理参数 %%
@@ -70,6 +70,9 @@ end
 
 %% ST启动函数
 function startup_ST_class(robot_stats)
+    controller = ST(robot_stats);
+    controller.computeAndFitK();
+    controller.saveSimParam('ST_sim_param.mat');
     fprintf('\n=== ST控制器设计完成 ===\n');
 end
  
