@@ -94,7 +94,7 @@ text(0.05, 0.88, sprintf('R² = %.6f\nRMSE = %.6f rad', r2, rmse), ...
     'BackgroundColor', [1, 1, 1, 0.9], 'EdgeColor', 'black');
 
 %% 绘制气弹簧分力 Fx 和 Fy 曲线
-N = 90;            % 气弹簧推力 (N)
+N = 250;            % 气弹簧推力 (N)
 
 % 根据拟合夹角计算分力
 alpha_fit_forTpFd = polyval(p, L_fit);   % 拟合得到的连续夹角

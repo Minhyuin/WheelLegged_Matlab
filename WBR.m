@@ -62,17 +62,17 @@ classdef WBR < handle
         function initializeWeightMatrices(obj)
             %INITIALIZEWEIGHTMATRICES 初始化权重矩阵
             obj.Q = diag([ ...
-                1000, 200, ...       % 轮位置
-                10000, 600, ...       % 底盘偏航角
-                1300, 50, ...       % 左腿倾角
-                1300, 50, ...       % 右腿倾角
-                40000, 1]);           % 底盘俯仰角
+                2500, 600, ...       % 轮位置
+                11000, 1000, ...       % 底盘偏航角
+                2000, 50, ...       % 左腿倾角
+                2000, 50, ...       % 右腿倾角
+                55000, 1]);           % 底盘俯仰角
 
             obj.R = diag([ ...
                 1e2, ...    % 左轮能量惩罚
                 1e2, ...    % 右轮能量惩罚
-                1e1, ...    % 左腿能量惩罚
-                1e1]);      % 右腿能量惩罚
+                1.3e1, ...    % 左腿能量惩罚
+                1.3e1]);      % 右腿能量惩罚
         end
         
         function loadOrGenerateStatusMatrix(obj)

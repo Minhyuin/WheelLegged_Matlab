@@ -62,8 +62,8 @@ classdef ST < handle
         function initializeWeightMatrices(obj)
             %INITIALIZEWEIGHTMATRICES 初始化权重矩阵
             obj.Q = diag([ ...
-                1000, ...       % 轮位置
-                2000, ...        % 底盘俯仰角
+                10000, ...       % 轮位置
+                30000, ...        % 底盘俯仰角
                 1000, ...      % 轮速度
                 600]);          % 底盘俯仰角速度
 
