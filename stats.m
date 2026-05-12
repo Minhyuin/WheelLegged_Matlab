@@ -15,11 +15,11 @@ function stats()
     % 【腿】包含了从髋关节开始以下的所有部分，包含大腿、膝关节、小腿、驱动轮（踝关节）
     % 【机体】即机器人整机除去腿外的部分，包含底盘、云台、发射机构
     
-    mass_total = 22.6110; % 整机称重可得
+    mass_total = 23.584; % 整机称重可得
     
-    inertia_z = 1.50809982; % 机器人绕z轴（中心）转动惯量 （实际在现实中并非常量，这里简化为常量
+    inertia_z = 0.69642534; % 机器人绕z轴（中心）转动惯量 （实际在现实中并非常量，这里简化为常量
     
-    distance_body_hip = -0.01474; % 机体质心到髋关节的距离
+    distance_body_hip = 0.00330; % 机体质心到髋关节的距离
     
     distance_wheel = 0.4611; % 左右驱动轮轮距
     distance_half_wheel = distance_wheel / 2; % 左右驱动轮轮距 / 2
@@ -94,8 +94,8 @@ function stats()
     
     %% 机体 %%
     mass_body = mass_total - mass_leg_total; % 机体质量
-    inertia_body = 1.00668369; % 机体绕髋关节转动惯量
-    body_centroid_offset_ang = 0.3522576; % 机体质心偏移角度（从机体方向指向质心，逆时针正方向）
+    inertia_body = 0.39216166; % 机体绕髋关节转动惯量
+    body_centroid_offset_ang = 1.32128049; % 机体质心偏移角度（从机体方向指向质心，逆时针正方向）
     
     % 底盘三维
     chassis_length = 0.51879;
